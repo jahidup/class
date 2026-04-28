@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Panel</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .hidden { display: none; }
+    .form-group { margin-bottom: 15px; }
+    .form-group label { display: block; margin-bottom: 5px; font-weight: 600; }
+    .form-group input, .form-group textarea { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; }
+    .admin-section { margin-bottom: 30px; border-bottom: 1px solid #eee; padding-bottom: 20px; }
+    .list-item { display: flex; justify-content: space-between; align-items: center; padding: 10px; background: #f9f9f9; margin: 5px 0; border-radius: 6px; }
+    .list-item span { flex: 1; }
+    .btn-danger { background: #dc2626; }
+    .btn-danger:hover { background: #b91c1c; }
+    .btn-sm { padding: 4px 12px; font-size: 0.8rem; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div id="loginSection">
+      <h2>Admin Login</h2>
+      <input type="password" id="adminPassword" placeholder="Admin Password">
+      <button class="btn" onclick="login()">Login</button>
+      <p id="loginMsg" style="color:red; margin-top:10px;"></p>
+    </div>
+
+    <div id="dashboard" class="hidden">
+      <h1>📁 Admin Dashboard</h1>
+      <button class="btn btn-danger" onclick="logout()" style="float:right;">Logout</button>
+      <div style="clear:both;"></div>
+
+      <!-- Courses Section -->
+      <div class="admin-section">
+        <h2>Courses</h2>
+        <div id="courseList"></div>
+        <div class="form-group">
+          <input type="text" id="newCourseTitle" placeholder="Course Title">
+          <input type="text" id="newCourseDesc" placeholder="Description (optional)">
+          <input type="text" id="newCourseThumb" placeholder="Thumbnail URL (optional)">
+          <button class="btn" onclick="addCourse()">Add Course</button>
+        </div>
+      </div>
+
+      <!-- Batches Section (for selected course) -->
+      <div class="admin-section">
+        <h2>Batches <small>(select a course below)</small></h2>
+        <select id="batchCourseSelect" onchange="loadBatches()">
+          <option value="">-- Select Course --</option>
+        </select>
+        <div id="batchList" style="margin-top:10px;"></div>
+        <div class="form-group" style="margin-top:10px;">
+          <input type="text" id="newBatchTitle" placeholder="Batch Title">
+          <input type="text" id="newBatchThumb" placeholder="Thumbnail URL">
+          <input type="text" id="newBatchDesc" placeholder="Description">
+          <button class="btn" onclick="addBatch()">Add Batch</button>
+        </div>
+      </div>
+
+      <!-- Lectures Section (for selected batch) -->
+      <div class="admin-section">
+        <h2>Lectures <small>(select a batch)</small></h2>
+        <select id="lectureBatchSelect" onchange="loadLectures()">
+          <option value="">-- Select Batch --</option>
+        </select>
+        <div id="lectureList" style="margin-top:10px;"></div>
+        <div class="form-group" style="margin-top:10px;">
+          <input type="text" id="newLecTitle" placeholder="Lecture Title">
+          <input type="text" id="newLecThumb" placeholder="Thumbnail URL">
+          <input type="text" id="newLecVideo" placeholder="Video URL *" required>
+          <input type="text" id="newLecNotes" placeholder="Notes URL">
+          <input type="text" id="newLecDPP" placeholder="DPP URL">
+          <input type="number" id="newLecOrder" placeholder="Order (number)">
+          <button class="btn" onclick="addLecture()">Add Lecture</button>
+        </div>
+        <!-- Edit form placeholder -->
+        <div id="editForm" class="hidden" style="margin-top:20px; background:#fff3cd; padding:15px; border-radius:8px;">
+          <h3>Edit Lecture</h3>
+          <input type="hidden" id="editLecId">
+          <input type="text" id="editLecTitle" placeholder="Title">
+          <input type="text" id="editLecThumb" placeholder="Thumbnail URL">
+          <input type="text" id="editLecVideo" placeholder="Video URL *">
+          <input type="text" id="editLecNotes" placeholder="Notes URL">
+          <input type="text" id="editLecDPP" placeholder="DPP URL">
+          <input type="number" id="editLecOrder" placeholder="Order">
+          <button class="btn" onclick="updateLecture()">Update</button>
+          <button class="btn btn-outline" onclick="hideEdit()">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script src="admin.js"></script>
+</body>
+</html>
