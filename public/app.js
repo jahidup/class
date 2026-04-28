@@ -1,119 +1,108 @@
-const API_BASE = '/api';
-let currentView = 'courses'; // 'courses', 'batches', 'lectures'
-let selectedCourseId = null;
-let selectedBatchId = null;
+const API = '/api';
+const appEl = document.getElementById('app');
 
-const app = document.getElementById('app');
-
-// ---------- Helpers ----------
-async function fetchData(url) {
+// Shared fetch helper
+async function fetchJSON(url) {
   const res = await fetch(url);
   if (!res.ok) throw new Error('Network error');
   return res.json();
 }
 
-function renderLoading() {
-  app.innerHTML = '<div class="loading">Loading...</div>';
+// Loading & Error states
+function showLoading() {
+  appEl.innerHTML = '<div class="loading"><div class="spinner"></div></div>';
+}
+function showError() {
+  appEl.innerHTML = '<div class="empty-state"><p>⚠️ Failed to load data. Please try again.</p></div>';
 }
 
-function renderError(msg) {
-  app.innerHTML = `<div class="error">${msg}</div>`;
-}
-
-// ---------- Home (Courses) ----------
-async function showCourses() {
-  currentView = 'courses';
-  renderLoading();
+// ---------- Home: Courses ----------
+async function loadCourses() {
+  showLoading();
   try {
-    const courses = await fetchData(`${API_BASE}/courses`);
+    const courses = await fetchJSON(`${API}/courses`);
     if (!courses.length) {
-      app.innerHTML = '<div class="empty">No courses available yet.</div>';
+      appEl.innerHTML = `<div class="empty-state">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+        <p>No courses yet. Check back soon!</p>
+      </div>`;
       return;
     }
-    let html = '<h1>📚 Available Courses</h1><div class="grid">';
+    let html = '<h1>📚 Featured Courses</h1><div class="course-grid stagger">';
     courses.forEach(course => {
       html += `
-        <div class="card" data-course-id="${course._id}" onclick="openCourse('${course._id}')">
-          <img src="${course.thumbnail || 'https://via.placeholder.com/400x200?text=Course'}" alt="${course.title}">
+        <div class="card fade-in" onclick="openCourse('${course._id}')">
+          <img src="${course.thumbnail || 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=400&h=200&fit=crop'}" alt="${course.title}" loading="lazy">
           <div class="card-body">
             <div class="card-title">${course.title}</div>
-            <div class="card-text">${course.description || ''}</div>
+            <div class="card-text">${course.description || 'Master new skills with our structured playlist.'}</div>
           </div>
-        </div>
-      `;
+        </div>`;
     });
     html += '</div>';
-    app.innerHTML = html;
-  } catch (err) {
-    renderError('Failed to load courses.');
-  }
+    appEl.innerHTML = html;
+  } catch (e) { showError(); }
 }
 
 // ---------- Batches of a Course ----------
 async function openCourse(courseId) {
-  selectedCourseId = courseId;
-  currentView = 'batches';
-  renderLoading();
+  showLoading();
   try {
-    const data = await fetchData(`${API_BASE}/courses/${courseId}`);
-    if (!data.batches.length) {
-      app.innerHTML = '<button class="btn back-btn" onclick="showCourses()">← Back</button><div class="empty">No batches available.</div>';
-      return;
+    const data = await fetchJSON(`${API}/courses/${courseId}`);
+    const { course, batches } = data;
+    let html = `<button class="btn-back" onclick="loadCourses()">← All Courses</button>`;
+    html += `<h1>${course.title}</h1>`;
+    if (!batches.length) {
+      html += '<div class="empty-state"><p>No batches available for this course.</p></div>';
+    } else {
+      html += '<div class="batch-grid stagger">';
+      batches.forEach(batch => {
+        html += `
+          <div class="card fade-in" onclick="openBatch('${batch._id}')">
+            <img src="${batch.thumbnail || 'https://images.unsplash.com/photo-1588196749597-9ff075ee6b5b?w=400&h=200&fit=crop'}" alt="${batch.title}" loading="lazy">
+            <div class="card-body">
+              <div class="card-title">${batch.title}</div>
+              <div class="card-text">${batch.description || ''}</div>
+            </div>
+          </div>`;
+      });
+      html += '</div>';
     }
-    let html = `<button class="btn back-btn" onclick="showCourses()">← Back to Courses</button>`;
-    html += `<h1>${data.course.title} – Batches</h1><div class="grid">`;
-    data.batches.forEach(batch => {
-      html += `
-        <div class="card" onclick="openBatch('${batch._id}')">
-          <img src="${batch.thumbnail || 'https://via.placeholder.com/400x200?text=Batch'}" alt="${batch.title}">
-          <div class="card-body">
-            <div class="card-title">${batch.title}</div>
-            <div class="card-text">${batch.description || ''}</div>
-          </div>
-        </div>
-      `;
-    });
-    html += '</div>';
-    app.innerHTML = html;
-  } catch (err) {
-    renderError('Failed to load batches.');
-  }
+    appEl.innerHTML = html;
+  } catch (e) { showError(); }
 }
 
 // ---------- Lectures of a Batch ----------
 async function openBatch(batchId) {
-  selectedBatchId = batchId;
-  currentView = 'lectures';
-  renderLoading();
+  showLoading();
   try {
-    const data = await fetchData(`${API_BASE}/batches/${batchId}`);
-    if (!data.lectures.length) {
-      app.innerHTML = '<button class="btn back-btn" onclick="openCourse(\'' + selectedCourseId + '\')">← Back to Batches</button><div class="empty">No lectures yet.</div>';
-      return;
-    }
-    let html = `<button class="btn back-btn" onclick="openCourse('${selectedCourseId}')">← Back to Batches</button>`;
-    html += `<h1>${data.batch.title} – Lectures</h1><div class="grid">`;
-    data.lectures.forEach(lec => {
-      html += `
-        <div class="card">
-          <img src="${lec.thumbnail || 'https://via.placeholder.com/400x200?text=Lecture'}" alt="${lec.title}">
-          <div class="card-body">
-            <div class="card-title">${lec.title}</div>
-            <div style="margin-top:10px;">
-              <a href="${lec.videoUrl}" target="_blank" class="btn">▶️ Watch Video</a>
-              <a href="${lec.notesUrl || '#'}" target="_blank" class="btn ${!lec.notesUrl ? 'disabled' : ''}">📝 Notes</a>
-              <a href="${lec.dppUrl || '#'}" target="_blank" class="btn ${!lec.dppUrl ? 'disabled' : ''}">📄 DPP</a>
+    const data = await fetchJSON(`${API}/batches/${batchId}`);
+    const { batch, lectures } = data;
+    let html = `<button class="btn-back" onclick="openCourse('${batch.courseId}')">← Back to Batches</button>`;
+    html += `<h1>${batch.title}</h1>`;
+    if (!lectures.length) {
+      html += '<div class="empty-state"><p>Lectures coming soon!</p></div>';
+    } else {
+      html += '<div class="batch-grid stagger">';
+      lectures.forEach(lec => {
+        html += `
+          <div class="card fade-in">
+            <img src="${lec.thumbnail || 'https://images.unsplash.com/photo-1501504905252-473c47e087f8?w=400&h=200&fit=crop'}" alt="${lec.title}" loading="lazy">
+            <div class="card-body">
+              <div class="card-title">${lec.title}</div>
+              <div class="lec-actions">
+                <a href="${lec.videoUrl}" target="_blank" class="btn">▶️ Watch</a>
+                <a href="${lec.notesUrl || '#'}" target="_blank" class="btn btn-outline" ${!lec.notesUrl ? 'disabled style="opacity:0.5; pointer-events:none;"' : ''}>📝 Notes</a>
+                <a href="${lec.dppUrl || '#'}" target="_blank" class="btn btn-outline" ${!lec.dppUrl ? 'disabled style="opacity:0.5; pointer-events:none;"' : ''}>📄 DPP</a>
+              </div>
             </div>
-          </div>
-        </div>
-      `;
-    });
-    html += '</div>';
-    app.innerHTML = html;
-  } catch (err) {
-    renderError('Failed to load lectures.');
-  }
+          </div>`;
+      });
+      html += '</div>';
+    }
+    appEl.innerHTML = html;
+  } catch (e) { showError(); }
 }
 
-// Initial load
-showCourses();
+// Start the app
+loadCourses();
